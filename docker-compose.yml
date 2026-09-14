@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres-order:
+    image: postgres:15-alpine
+    container_name: atlas_postgres_order
+    environment:
+      POSTGRES_USER: atlas_user
+      POSTGRES_PASSWORD: atlas_password
+      POSTGRES_DB: atlas_orders
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_order:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas_user -d atlas_orders"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+    image: atlasflow-order-service:latest
+    container_name: atlas_order_service
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://atlas_user:atlas_password@postgres-order:5432/atlas_orders
+    depends_on:
+      postgres-order:
+        condition: service_healthy
+
+  inventory-service:
+    image: atlasflow-inventory-service:latest
+    container_name: atlas_inventory_service
+    ports:
+      - "8001:8001"
+
+  notification-service:
+    image: atlasflow-notification-service:latest
+    container_name: atlas_notification_service
+    ports:
+      - "8002:8002"
+
+volumes:
+  pgdata_order:
