@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service-deployment
+  labels:
+    app: order-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+      - name: order-service
+        image: atlasflow-order-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        env: # <--- AJOUTE CETTE SECTION
+        - name: DATABASE_URL
+          value: "postgresql://atlas_user:atlas_password@postgres-order:5432/atlas_orders"

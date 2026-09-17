@@ -1,0 +1,33 @@
+# FILE: infrastructure/kubernetes/prod/aws-config.yaml
+
+# 1. ConfigMap pour les données non sensibles (URLs AWS)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atlasflow-prod-config
+  namespace: default
+data:
+  # L'URL SQS générée par Terraform à la Phase 19
+  AWS_SQS_ORDER_EVENTS_URL: "https://sqs.eu-west-3.amazonaws.com/190771706930/atlasflow-order-events-queue"
+  
+  # L'endpoint RDS généré par Terraform à la Phase 18
+  DB_HOST: "atlasflow-db.cbwuog62ukaq.eu-west-3.rds.amazonaws.com"
+  DB_PORT: "5432"
+  DB_USER: "atlasflow_user"
+  DB_NAME: "atlasflow_db"
+  
+  # Indique à l'application qu'elle est en mode production Cloud
+  ENVIRONMENT: "production"
+
+---
+# 2. Secret pour les données sensibles
+apiVersion: v1
+kind: Secret
+metadata:
+  name: atlasflow-prod-secrets
+  namespace: default
+type: Opaque
+stringData:
+  # En réalité, on utiliserait AWS Secrets Manager ou un outil comme External Secrets Operator.
+  # Pour l'exemple, on injecte ici le mot de passe généré par Terraform.
+  DB_PASSWORD: "TON_MOT_DE_PASSE_TERRAFORM_MASQUE"

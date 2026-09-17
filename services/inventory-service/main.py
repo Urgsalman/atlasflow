@@ -1,29 +1,59 @@
-from fastapi import FastAPI, HTTPException
-from schemas import Product, StockUpdate
+import json
+import os
+import threading
+from fastapi import FastAPI
+from confluent_kafka import Consumer, KafkaError
 
 app = FastAPI(title="Inventory Service")
 
-# Fausse base de données en mémoire pour l'instant
-FAKE_DB = {
-    "prod_1": {"id": "prod_1", "name": "Laptop", "stock": 5},
-    "prod_2": {"id": "prod_2", "name": "Mouse", "stock": 0}
-}
+# --- CONFIGURATION KAFKA ---
+KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
+KAFKA_TOPIC = "order-events"
+KAFKA_GROUP_ID = "inventory-group"
 
-@app.get("/api/products/{product_id}")
-async def get_product(product_id: str):
-    product = FAKE_DB.get(product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    return product
+def consume_messages():
+    """ Fonction qui tourne en boucle pour écouter les nouveaux messages """
+    consumer = Consumer({
+        'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
+        'group.id': KAFKA_GROUP_ID,
+        'auto.offset.reset': 'earliest' # Lit les messages depuis le début si nouveau groupe
+    })
+    consumer.subscribe([KAFKA_TOPIC])
 
-@app.patch("/api/products/{product_id}/stock")
-async def update_stock(product_id: str, update: StockUpdate):
-    product = FAKE_DB.get(product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+    # FORCING DOCKER UPDATE
+    print("🚀 [INVENTORY] Démarrage du Consumer Kafka...", flush=True)
     
-    if product["stock"] < update.quantity_to_deduct:
-        raise HTTPException(status_code=400, detail="Insufficient stock")
+    while True:
+        msg = consumer.poll(1.0) # Attend un message pendant 1 seconde
         
-    product["stock"] -= update.quantity_to_deduct
-    return {"message": "Stock updated", "new_stock": product["stock"]}
+        if msg is None:
+            continue
+        if msg.error():
+            if msg.error().code() == KafkaError._PARTITION_EOF:
+                continue
+            else:
+                print(f"❌ Erreur Kafka: {msg.error()}")
+                break
+
+        # Message reçu avec succès !
+        try:
+            event_data = json.loads(msg.value().decode('utf-8'))
+            order_id = event_data.get("order_id")
+            items = event_data.get("items", [])
+            
+            # ---> AJOUTE FLUSH=TRUE SUR CES DEUX LIGNES <---
+            print(f"📦 [INVENTORY] Événement reçu pour la commande {order_id} !", flush=True)
+            print(f"   -> Vérification et déduction des stocks pour : {items}", flush=True)
+            
+        except Exception as e:
+            print(f"⚠️ Erreur de traitement du message: {e}", flush=True)
+
+# Au démarrage de l'API FastAPI, on lance le Consumer Kafka en arrière-plan
+@app.on_event("startup")
+def startup_event():
+    thread = threading.Thread(target=consume_messages, daemon=True)
+    thread.start()
+
+@app.get("/")
+def read_root():
+    return {"message": "Inventory Service is running and listening to Kafka"}
