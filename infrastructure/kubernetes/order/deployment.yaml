@@ -1,0 +1,14 @@
+containers:
+      - name: order-service
+        image: atlasflow-order-service:latest
+        
+        # --- DÉBUT SECURITYCONTEXT ---
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        # --- FIN SECURITYCONTEXT ---
+        
+        ports:
+        - containerPort: 8000

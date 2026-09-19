@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: order-service-network-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: order-service
+  policyTypes:
+  - Ingress
+  - Egress
+  
+  # 1. Règles d'entrée (Ingress)
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          role: api-gateway # Seul l'API Gateway aura le droit de parler au Order Service
+    ports:
+    - protocol: TCP
+      port: 8000
+
+  # 2. Règles de sortie (Egress)
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres # Autorise la connexion à la BDD
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: kafka # Autorise la publication d'événements
+    ports:
+    - protocol: TCP
+      port: 9092
