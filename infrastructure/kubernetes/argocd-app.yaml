@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: 'https://github.com/Urgsalman/atlasflow.git'
     targetRevision: main
-    path: infrastructure/kubernetes/order
+    path: infrastructure/kubernetes/base/order
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: default
