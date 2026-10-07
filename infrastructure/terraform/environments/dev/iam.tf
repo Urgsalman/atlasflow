@@ -72,3 +72,9 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
     ]
   })
 }
+
+# Autoriser les noeuds EKS a telecharger des images depuis ECR
+resource "aws_iam_role_policy_attachment" "eks_ecr_read_only" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = aws_iam_role.eks_node_role.name # On suppose que ton role de noeud s'appelle ainsi dans main.tf ou eks.tf
+}
