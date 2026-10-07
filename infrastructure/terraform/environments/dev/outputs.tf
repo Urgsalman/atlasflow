@@ -40,13 +40,3 @@ output "github_actions_role_arn" {
   description = "L'ARN du rôle IAM à configurer dans GitHub Actions"
   value       = aws_iam_role.github_actions.arn
 }
-
-output "eks_cluster_endpoint" {
-  description = "URL de l'API Kubernetes"
-  value       = module.eks.cluster_endpoint
-}
-
-output "eks_cluster_name" {
-  description = "Nom du cluster EKS"
-  value       = module.eks.cluster_name
-}

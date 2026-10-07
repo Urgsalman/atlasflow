@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: atlasflow-order
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/Urgsalman/atlasflow.git'
+    targetRevision: main
+    path: infrastructure/kubernetes/order
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

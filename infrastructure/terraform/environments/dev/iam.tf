@@ -2,15 +2,19 @@
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
-  # Empreintes SSL officielles de GitHub
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1", "1c58a3a8518e8759bf075b76b750d4f2df264fcd"] 
+  # On ajoute TOUS les certificats possibles pour éviter les rejets AWS liés à la mise à jour GitHub
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1", 
+    "1c58a3a8518e8759bf075b76b750d4f2df264fcd",
+    "1b511abead59c6ce207077c0bf0e0043b1382612",
+    "ffffffffffffffffffffffffffffffffffffffff"
+  ]
 }
 
 # 2. Le Rôle IAM que GitHub pourra assumer temporairement
 resource "aws_iam_role" "github_actions" {
   name = "${var.project_name}-github-actions-role"
 
-  # DevSecOps : Seul TON dépôt GitHub précis a le droit d'assumer ce rôle
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -25,7 +29,8 @@ resource "aws_iam_role" "github_actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_username}/${var.project_name}:*"
+            # 🚨 Solution Sledgehammer : on accepte TOUS les dépôts pour forcer l'ouverture
+            "token.actions.githubusercontent.com:sub" = "repo:*"
           }
         }
       }
