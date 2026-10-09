@@ -16,10 +16,10 @@ spec:
     spec:
       containers:
       - name: order-service
-        image: atlasflow-order-service:latest
+        image: 190771706930.dkr.ecr.eu-west-3.amazonaws.com/atlasflow-order-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
-        env: # <--- AJOUTE CETTE SECTION
+        env:
         - name: DATABASE_URL
           value: "postgresql://atlas_user:atlas_password@postgres-order:5432/atlas_orders"
